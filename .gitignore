@@ -1,0 +1,10 @@
+# Virtual environment
+.venv/
+
+# Dataset (~150 MB, larger than GitHub's 100 MB file limit) - downloaded by the notebook
+data/
+
+# Python / Jupyter caches
+__pycache__/
+.ipynb_checkpoints/
+*.pyc

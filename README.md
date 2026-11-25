@@ -14,7 +14,7 @@ The CSV (~150 MB) is not stored in this repo. The notebook downloads it automati
 ## Pipeline
 1. **Data exploration**: `Amount` / `Time` distributions, class imbalance, day/night patterns, heavy-tailed features
 2. **Preprocessing**: labels hidden, cyclic hour-of-day features, log-amount, `StandardScaler` (and why not `MinMaxScaler`), PCA & t-SNE visualisation
-3. **Models**: distance baseline, **Isolation Forest**, **One-Class SVM**, **Autoencoder (PyTorch)**, rank-average ensemble
+3. **Models**: distance baseline, **Isolation Forest**, **One-Class SVM**, **Autoencoder (PyTorch, linear bottleneck)**, two percentile ensembles (mean and max)
 4. **Evaluation**: precision, recall, F1, PR-AUC, ROC-AUC at several alert budgets
 5. **Insights**: what gets flagged, false alarms vs missed frauds, model agreement
 
@@ -24,9 +24,10 @@ The CSV (~150 MB) is not stored in this repo. The notebook downloads it automati
 |---|---|---|---|---|---|
 | **Isolation Forest** | **0.253** | **0.961** | **0.280** | **0.360** | **0.315** |
 | Distance baseline | 0.200 | 0.961 | 0.269 | 0.309 | 0.288 |
+| Ensemble (max) | 0.172 | 0.958 | 0.239 | 0.279 | 0.258 |
 | One-Class SVM | 0.125 | 0.956 | 0.136 | 0.184 | 0.156 |
-| Ensemble | 0.076 | 0.943 | 0.089 | 0.110 | 0.099 |
-| Autoencoder | 0.035 | 0.899 | 0.077 | 0.088 | 0.082 |
+| Ensemble (mean) | 0.112 | 0.952 | 0.185 | 0.228 | 0.204 |
+| Autoencoder | 0.051 | 0.923 | 0.079 | 0.103 | 0.089 |
 | *Random guess* | *0.002* | *0.500* | | | |
 
 *"@ 0.2 %" = flag the 0.2 % most anomalous transactions for review.*
@@ -35,6 +36,10 @@ The CSV (~150 MB) is not stored in this repo. The notebook downloads it automati
 - **Caught frauds**: small amounts (often < €2, which suggests card testing), often at night, with extreme values in `V17`, `V14`, `V12`, `V4`, `V11`.
 - **False alarms**: mostly large legitimate purchases. The models detect *unusual*, not necessarily *fraudulent*.
 - **Missed frauds** (~60 %) look like ordinary purchases. This is the natural limit of a purely unsupervised approach.
+- **Ensembles:** combining models with the **maximum** percentile instead of the average keeps frauds that only one model
+  catches (PR-AUC 0.11 → 0.17), but it still trails Isolation Forest alone because it also inherits every model's false alarms.
+- **Autoencoder:** a linear bottleneck beats a ReLU bottleneck in every architecture tested (0.035 → 0.051 for the
+  16 → 8 model used). Wider bottlenecks get up to 0.20, which still stays below Isolation Forest.
 
 ## How to run
 ```bash
@@ -44,7 +49,7 @@ pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 jupyter notebook anomaly_detection.ipynb
 ```
-A full run takes about 6-8 minutes on a laptop CPU (t-SNE and the autoencoder take the longest).
+A full run takes about 8-10 minutes on a laptop CPU (t-SNE and the autoencoder take the longest).
 
 ## Project structure
 ```
